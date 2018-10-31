@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import csv
 import sys
+import os
 
 def mq(folder):
     """ Reads from evidence and peptide MQ results files and returns a
@@ -176,7 +177,6 @@ def get_mid(total_data):
                                 # Get half time from Pandas dataframe
                                 if (y in rob.index) and (x in rob.columns):
                                     hf = rob.ix[y, x]
-                                    print y, aa, x, hf
                                 total_i += intensity
                                 # If this position was modified, its mod label would be this
                                 q_mod = "%s-%i-de" % (aa, cur_pos)
@@ -236,11 +236,11 @@ def calc_deam(mid):
             else: print "No Gln %s %s" % (sample, protein)
             # Each sample relative amounts
             relative.append([sample, protein, rel_asn, rel_gln])
-    print "Deamidation calculated"
+    print "Bulk deamidation calculated"
     return relative
 
 
-def bulk_deam(mid):
+def bulk_deam(mid, show = False, debug = False):
     """ Plots bulk deamidation
     """
     relative = np.array(calc_deam(mid))
@@ -272,10 +272,28 @@ def bulk_deam(mid):
     # Title
     plot_title = "Deamidation"
     plt.title(plot_title)
-    plt.show()
+    save_plots("Bulk")
+    if debug: print relative
+    if show: plt.show()
 
 
+def save_plots(method):
+    """ Save plots to a Results dir, which is created or located inside the
+    data directory given as args
+    """
+    results_dir = "%s/Results" % data_folder
+    if not os.path.exists(results_dir):
+		os.makedirs(results_dir)
+    title = "%s_plot.png" % method
+    path = "%s/%s" % (results_dir, title)
+    plt.savefig(path)
+    print "%s saved in %s" % (title, results_dir)
+
+
+
+data_folder = ""
 def main():
+    global data_folder
     IMPLEMENTED_SOFTWARE = {"MQ": mq, "PEAKS": peaks,
                         "GPM": gpm, "MASCOT": mascot}
     try:
@@ -286,7 +304,7 @@ def main():
 
     total_data = IMPLEMENTED_SOFTWARE[software](data_folder)
     mid_classic, mid_ss = get_mid(total_data)
-    bulk_deam(mid_classic)
+    bulk_deam(mid_classic, show = False, debug = False)
 
 
 main()
