@@ -1,13 +1,15 @@
 #!/usr/bin/python
 from __future__ import division
+from matplotlib import markers
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 import numpy as np
 import pandas as pd
 import csv
 import sys
 import os
 
-def mq(folder):
+def mq(folder, filter_con = True):
     """ Reads from evidence and peptide MQ results files and returns a
     dictionaryof the form:
     total_data[sample][protein] = [intensity, pre, start, seq,
@@ -43,9 +45,12 @@ def mq(folder):
                 experiment = row[e_exp]
             else: experiment = e_exp
 
-            # Experiment, seq, mods, intensity, ID, protein
-            e_data.append([experiment, row[e_seq], row[e_mod_seq], row[e_i],
-                           row[e_pep_id], row[e_protein]])
+            protein = row[e_protein]
+            # Filter out contaminants if active
+            if (filter_con and "CON_" not in protein) or (not filter_con):
+                # Experiment, seq, mods, intensity, ID, protein
+                e_data.append([experiment, row[e_seq], row[e_mod_seq], row[e_i],
+                               row[e_pep_id], row[e_protein]])
 
     # Read positional info from peptide file
     with open(pep_file) as csvfile2:
@@ -270,7 +275,7 @@ def bulk_deam(mid, show = False, debug = False):
     plt.axis((xmin, xmax, ymin, 1.0))
 
     # Title
-    plot_title = "Deamidation"
+    plot_title = "Bulk Deamidation"
     plt.title(plot_title)
     save_plots("Bulk")
     if debug: print relative
@@ -290,6 +295,171 @@ def save_plots(method):
     print "%s saved in %s" % (title, results_dir)
 
 
+def ss_wrangle(mid):
+    """ Takes a mid and returns a NP friendly format for plotting
+    """
+    data = []
+    for sample in mid:
+        for protein in mid[sample]:
+            for label, val in mid[sample][protein].items():
+                hf = val[0]
+                after = val[1:]
+                mod = [item[0] for item in after]
+                total = [item[1] for item in after]
+                info = [sample, protein, label, hf, (np.mean(mod)/np.mean(total)), np.mean(total)]
+                data.append(info)
+    data = np.array(data)
+    return data
+
+
+def get_relative_size(ti, mid, sample, protein, single_sample):
+    """ Takes a total intensity of a point combo and returns it as a size
+    relative to all total intensities in that sample
+    (or, if single sample, relative to that protein)
+    """
+    # Get total intensities
+    totals = []
+    if single_sample:
+        for label in mid[sample][protein]:
+            for row in mid[sample][protein][label][1:]:
+                totals.append(row[1])
+    else:
+        for p in mid[sample]:
+            for label in mid[sample][p]:
+                for row in mid[sample][p][label][1:]:
+                    totals.append(row[1])
+    # Get relative size
+    ti = float(ti)
+    o_max = np.amax(totals)
+    o_min = np.amin(totals)
+    n_max = 1000
+    n_min = n_max/10
+    o_range = (o_max - o_min)
+    n_range = (n_max - n_min)
+    new_size = (((ti - o_min)*n_range)/o_range)+n_min
+    return new_size
+
+
+def site_spef(mid, show = False, debug = False):
+    # Initiate plotting
+    fig = plt.figure()
+    ax = plt.subplot(111)
+
+    # Get data and sort by sample
+    data = np.array(sorted(ss_wrangle(mid), key=lambda row:row[0]))
+
+    # Check if there's oly one sample
+    # If so we want to colour stuff by protein instead
+    single_sample = False
+    col_index = 0
+    if len(mid.keys()) == 1:
+        single_sample = True
+        col_index = 1
+
+    # How many different samples/proteins
+    num_cols = len(set(data[:,col_index])) + 1
+
+    # Get colour map based on how many needed
+    cmap_col = "nipy_spectral"
+    if num_cols <= 10:
+        cmap_col = "tab10"
+    if 10 < num_cols <= 20:
+        cmap_col = "tab20"
+    cmap = plt.cm.get_cmap(cmap_col, num_cols)
+    c = 0
+
+    # If there have to be more than 10 colours, it will get confusing
+    # If this is the case we just want to show samples in the legend
+    simplify = False
+    if num_cols >= 10:
+        simplify = True
+
+    # Labels and markers
+    used_labels = []
+    used_markers = []
+    marker_dict = {}
+    valid_markers = ([item[0] for item in markers.MarkerStyle.markers.items() if
+    item[1] is not 'nothing' and not item[1].startswith('tick')
+    and not item[1].startswith('caret')])
+    patches = []
+
+    # None for now
+    prev_sample, prev_protein = data[0][0:2]
+
+    for line in data:
+
+        sample, protein, label, hf, rmi, ti = line
+
+        # Colour depending on sample or protein
+        color_attribute = sample
+        prev_color_attribute = prev_sample
+        if single_sample:
+            color_attribute = protein
+            prev_color_attribute = prev_protein
+
+        # Get new colour
+        if prev_color_attribute != color_attribute:
+            c += 1
+        col = cmap(c)
+
+        # Legend hack
+        # This is needed so as not to duplicate label every point
+        if not simplify:
+            l = "%s %s" % (sample, protein)
+        else: l = sample # Keep it simple if many samples
+        if l in used_labels:
+            l = None
+        else:
+            used_labels.append(l)
+            if simplify:
+                # Use patches on legend if there's lots of samples/proteins
+                patches.append(mpatches.Patch(color=col, label=l))
+
+        # Get a relative size for the points
+        size = get_relative_size(ti, mid, sample, protein, single_sample)
+
+        # Get a marker based on protein from all valid markers
+        if protein in marker_dict:
+            m = marker_dict[protein]
+        else:
+            m = valid_markers[0]
+            marker_dict[protein] = m
+            # Used this one, so pop from list
+            used_markers.append(valid_markers.pop(0))
+            # If there's none left, refresh list
+            if len(valid_markers) == 0:
+                valid_markers = list(set(used_markers))
+                used_markers = []
+
+        # We want intact intensity, not deamidated intensity
+        rmi = 1 - float(rmi)
+
+        plt.scatter(hf, rmi, color=col, marker=m, alpha=.8, s=size, label=l)
+
+        prev_sample = sample
+        prev_protein = protein
+
+    # Labels
+    plt.ylabel("Relative intact intensity @ Pos")
+    plt.xlabel("Half life @ Pos")
+
+    # Used to put legend outside the box
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+
+    if simplify: # Use patches if too much data
+        lgd = plt.legend(handles=patches, prop={'size':7},loc='center left', bbox_to_anchor=(1, 0.5))
+    else:
+        lgd = plt.legend(prop={'size':7},loc='center left', bbox_to_anchor=(1, 0.5))
+    # Make small and neat
+    for i in xrange(0, len(lgd.legendHandles)):
+        lgd.legendHandles[i]._sizes = [30]
+
+    plot_title = "Site-Specific Deamidation"
+    plt.title(plot_title)
+    save_plots("Site-Specific")
+    if show: plt.show()
+
 
 data_folder = ""
 def main():
@@ -302,9 +472,10 @@ def main():
     except IndexError as e:
         print "Specify software type, followed by path to data"
 
-    total_data = IMPLEMENTED_SOFTWARE[software](data_folder)
+    total_data = IMPLEMENTED_SOFTWARE[software](data_folder, filter_con = False)
     mid_classic, mid_ss = get_mid(total_data)
-    bulk_deam(mid_classic, show = False, debug = False)
+    bulk_deam(mid_classic, show = True, debug = False)
+    site_spef(mid_ss, show = True)
 
 
 main()
