@@ -374,6 +374,8 @@ def site_spef(mid, show = False, debug = False):
     if num_cols >= 10:
         simplify = True
 
+    # !!! MANUALLY SET "SIMPLIFY" TO TRUE/FALSE HERE IF NEEDED
+
     # Labels and markers
     used_labels = []
     used_markers = []
@@ -472,9 +474,9 @@ def main():
     except IndexError as e:
         print "Specify software type, followed by path to data"
 
-    total_data = IMPLEMENTED_SOFTWARE[software](data_folder, filter_con = False)
+    total_data = IMPLEMENTED_SOFTWARE[software](data_folder, filter_con = True)
     mid_classic, mid_ss = get_mid(total_data)
-    bulk_deam(mid_classic, show = True, debug = False)
+    bulk_deam(mid_classic, show = True, debug = True)
     site_spef(mid_ss, show = True)
 
 
