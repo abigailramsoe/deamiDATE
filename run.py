@@ -476,8 +476,8 @@ def main():
 
     total_data = IMPLEMENTED_SOFTWARE[software](data_folder, filter_con = True)
     mid_classic, mid_ss = get_mid(total_data)
-    bulk_deam(mid_classic, show = True, debug = True)
-    site_spef(mid_ss, show = True)
+    bulk_deam(mid_classic, show = False, debug = False)
+    site_spef(mid_ss, show = False)
 
 
 main()
