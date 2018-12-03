@@ -1,4 +1,4 @@
-#deamiDATE 1.0
+**deamiDATE 1.0**
 
 deamiDATE 1.0 is a site-specific deamidation tool for palaeproteomics.
 
