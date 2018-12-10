@@ -23,8 +23,8 @@ Results will appear in the directory given in step 5.
 
 Steps 1 - 2 as per Unix instructions, then
 
-1. Open command prompt
-2. `C:\Python27\python.exe C:\Users\Username\deamiDATE\run.py C:\Users\Username\MQresults` where the first argument is the path to the Python interpreter, the second is the path to run.py (in the deamiDATE directory), and the last is the directory containing the MQ results
+1. Open command prompt (no idea)
+2. `run C:\Users\Username\Test Data\Tapir` where the second argument is the directory containing the MQ results
 
 Results will *hopefully* appear in the given MQ results directory.
 
