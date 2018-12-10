@@ -11,9 +11,8 @@ Deamidation is calculated per experiment, and per protein in experiment. If any 
 1. Download files from GitHub
 2. Unzip
 3. Navigate to deamiDATE directory
-4. Make run.py executable `chmod +x run.py`
-5. Run program, with include an argument for the folder with MQ result files,
-e.g. `./run.py ../MQresults` must be a directory containing the evidence.txt and peptides.txt
+4. Run program, with include an argument for the folder with MQ result files,
+e.g. `./run ../Test Data/Tapir` must be a directory containing the evidence.txt and peptides.txt
 
 Results will appear in the directory given in step 5.
 

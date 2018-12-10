@@ -463,18 +463,13 @@ def site_spef(mid, show = False, debug = False):
     if show: plt.show()
 
 
-data_folder = ""
 def main():
-    global data_folder
-    IMPLEMENTED_SOFTWARE = {"MQ": mq, "PEAKS": peaks,
-                        "GPM": gpm, "MASCOT": mascot}
     try:
-        software = sys.argv[1].upper()
-        data_folder = sys.argv[2]
+        data_folder = sys.argv[1]
     except IndexError as e:
-        print "Specify software type, followed by path to data"
+        print "Specify path to data"
 
-    total_data = IMPLEMENTED_SOFTWARE[software](data_folder, filter_con = True)
+    total_data = mq(data_folder, filter_con = True)
     mid_classic, mid_ss = get_mid(total_data)
     bulk_deam(mid_classic, show = False, debug = False)
     site_spef(mid_ss, show = False)
