@@ -462,7 +462,7 @@ def site_spef(mid, show = False, debug = False):
     save_plots("Site-Specific")
     if show: plt.show()
 
-
+data_folder = ""
 def main():
     try:
         data_folder = sys.argv[1]
