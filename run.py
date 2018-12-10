@@ -464,6 +464,7 @@ def site_spef(mid, show = False, debug = False):
 
 data_folder = ""
 def main():
+    global data_folder
     try:
         data_folder = sys.argv[1]
     except IndexError as e:
