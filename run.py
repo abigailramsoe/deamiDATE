@@ -235,10 +235,8 @@ def calc_deam(mid):
             # Calculate relative amounts
             if asn_t > 0:
                 rel_asn = 1 - (asn_m/asn_t)
-            else: print "No Asn %s %s" % (sample, protein)
             if gln_t > 0:
                 rel_gln = 1 - (gln_m/gln_t)
-            else: print "No Gln %s %s" % (sample, protein)
             # Each sample relative amounts
             relative.append([sample, protein, rel_asn, rel_gln])
     print "Bulk deamidation calculated"
@@ -356,6 +354,7 @@ def site_spef(mid, show = False, debug = False):
         single_sample = True
         col_index = 1
 
+
     # How many different samples/proteins
     num_cols = len(set(data[:,col_index])) + 1
 
@@ -371,7 +370,7 @@ def site_spef(mid, show = False, debug = False):
     # If there have to be more than 10 colours, it will get confusing
     # If this is the case we just want to show samples in the legend
     simplify = False
-    if num_cols >= 10:
+    if num_cols >= 10 and not single_sample:
         simplify = True
 
     # !!! MANUALLY SET "SIMPLIFY" TO TRUE/FALSE HERE IF NEEDED
