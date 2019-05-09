@@ -505,7 +505,7 @@ def save_csv_results(data, method):
     csvfile.close()
     print "%s saved in %s" % (title, results_dir)
 
-    
+
 def read_protein_list(protein_list_file):
     """ Reads a list of relevant proteins in order to filter data later
     """
