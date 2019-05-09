@@ -2,32 +2,44 @@
 
 deamiDATE 1.0 is a site-specific deamidation tool for palaeproteomics.
 
-Given MaxQuant result output (in particular, the evidence.txt and peptides.txt files), it produces two graphs, one showing bulk deamidation, one showing site-specific deamidation.
+Given MaxQuant result output (in particular, the `evidence.txt` and `peptides.txt` files), it produces two graphs, one showing bulk deamidation, one showing site-specific deamidation.
 Deamidation is calculated per experiment, and per protein in experiment. If any filtering of experiments or proteins is required, it is recommended this is done before running deamiDATE.
+
+* Note: only tested on UNIX * 
 
 ## Use:
 
-### Unix:
+### Normal Use:
 1. Download files from GitHub
 2. Unzip
 3. Navigate to deamiDATE directory
-4. Run program, with include an argument for the folder with MQ result files,
-e.g. `./run ../Test Data/Tapir` must be a directory containing the evidence.txt and peptides.txt
+4. Navigate to Packaged Version directory
+5. Make `run` executable, e.g. `chmod +x run`
+6. Run program e.g. `./run` with the following args:
+	1. A directory containing at least `evidence.txt` and `peptides.txt`, e.g. `./run ../Test Data`
+	2. A text file containing a list (one per line) of relevant proteins to "filter in", e.g. `./run ../Test Data ../protein_list.txt`
 
-Results will appear in the directory given in step 5.
+Results will appear in the directory of the MQ output files
 
 
-### Windows
+### Advanced Use
 
-*Note: untested*
+*Note: only use if you want to mess with stuff*
 
-Steps 1 - 2 as per Unix instructions, then
+This is just running the python script without the package details, will require a tonne of dependencies, you can work out which. 
+Do this if you'd like to mess with default options etc.
 
-1. Open command prompt (no idea)
-2. `run C:\Users\Username\Test Data\Tapir` where the second argument is the directory containing the MQ results
+Steps 1 - 3 as per Unix instructions, then
 
-Results will *hopefully* appear in the given MQ results directory.
+1. Make `run.py` executable, e.g. `chmod +x run`
+2. Run program e.g. `./run` with the following args:
+	1. A directory containing at least `evidence.txt` and `peptides.txt`, e.g. `./run ../Test Data`
+	2. A text file containing a list (one per line) of relevant proteins to "filter in", e.g. `./run ../Test Data ../protein_list.txt`
+ 
+Results will appear in the directory of the MQ output files
 
-## Frequent problems
 
-*To be added after testing!*
+## Test Data
+
+Test data is output of MaxQuant run on tapir files from:
+Welker, F. et al. Ancient proteins resolve the evolutionary history of Darwin’s South American ungulates. Nature 522, 81–84 (2015).

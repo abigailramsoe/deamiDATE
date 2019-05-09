@@ -5,11 +5,12 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
 import pandas as pd
+import random
 import csv
 import sys
 import os
 
-def mq(folder, filter_con = True):
+def mq(folder, protein_list, filter_con = True):
     """ Reads from evidence and peptide MQ results files and returns a
     dictionaryof the form:
     total_data[sample][protein] = [intensity, pre, start, seq,
@@ -48,8 +49,10 @@ def mq(folder, filter_con = True):
             protein = row[e_protein]
             # Filter out contaminants if active
             if (filter_con and "CON_" not in protein) or (not filter_con):
-                # Experiment, seq, mods, intensity, ID, protein
-                e_data.append([experiment, row[e_seq], row[e_mod_seq], row[e_i],
+                if row[e_protein] in protein_list or len(protein_list) == 0:
+
+                    # Experiment, seq, mods, intensity, ID, protein
+                    e_data.append([experiment, row[e_seq], row[e_mod_seq], row[e_i],
                                row[e_pep_id], row[e_protein]])
 
     # Read positional info from peptide file
@@ -243,7 +246,7 @@ def calc_deam(mid):
     return relative
 
 
-def bulk_deam(mid, show = False, debug = False):
+def bulk_deam(mid, show = False, to_print = True):
     """ Plots bulk deamidation
     """
     relative = np.array(calc_deam(mid))
@@ -258,7 +261,10 @@ def bulk_deam(mid, show = False, debug = False):
     gln_bars = ax.bar(index + width, relative[:,3], width, color='red')
 
     # Make the bar names protein and sample
-    names = ["%s %s" % (x, y) for x, y in zip(relative[:,0], relative[:,1])]
+    if len(set(relative[:,0])) == 1: # Only one sample
+        names = relative[:,1] # Protein is names
+    else:
+        names = ["%s %s" % (x, y) for x, y in zip(relative[:,0], relative[:,1])]
     # Lables
     ax.set_ylabel('% (Asn, Gln)')
     ax.set_xticks(index + width / 2)
@@ -275,8 +281,9 @@ def bulk_deam(mid, show = False, debug = False):
     # Title
     plot_title = "Bulk Deamidation"
     plt.title(plot_title)
+    plt.tight_layout()
     save_plots("Bulk")
-    if debug: print relative
+    if to_print: save_csv_results(relative, "Bulk")
     if show: plt.show()
 
 
@@ -338,7 +345,7 @@ def get_relative_size(ti, mid, sample, protein, single_sample):
     return new_size
 
 
-def site_spef(mid, show = False, debug = False):
+def site_spef(mid, show = False, to_print = True):
     # Initiate plotting
     fig = plt.figure()
     ax = plt.subplot(111)
@@ -382,10 +389,17 @@ def site_spef(mid, show = False, debug = False):
     valid_markers = ([item[0] for item in markers.MarkerStyle.markers.items() if
     item[1] is not 'nothing' and not item[1].startswith('tick')
     and not item[1].startswith('caret')])
+    # Hack to take out stupid markers
+    del valid_markers[3]
+    del valid_markers[6]
+    del valid_markers[2]
+    random.shuffle(valid_markers)
     patches = []
-
     # None for now
     prev_sample, prev_protein = data[0][0:2]
+
+    # Data to print later
+    data_to_print = []
 
     for line in data:
 
@@ -407,7 +421,10 @@ def site_spef(mid, show = False, debug = False):
         # This is needed so as not to duplicate label every point
         if not simplify:
             l = "%s %s" % (sample, protein)
-        else: l = sample # Keep it simple if many samples
+        if simplify:
+            l = sample # Keep it simple if many samples
+        if single_sample:
+            l = protein # Only need protein if only one sample
         if l in used_labels:
             l = None
         else:
@@ -432,14 +449,23 @@ def site_spef(mid, show = False, debug = False):
                 valid_markers = list(set(used_markers))
                 used_markers = []
 
+
         # We want intact intensity, not deamidated intensity
         rmi = 1 - float(rmi)
 
+
         plt.scatter(hf, rmi, color=col, marker=m, alpha=.8, s=size, label=l)
+
+        if to_print:
+            data_to_print.append([hf, rmi, size, sample, protein])
 
         prev_sample = sample
         prev_protein = protein
 
+
+    # Send to printing?
+    if to_print:
+        save_csv_results(data_to_print, "Site-Specific")
     # Labels
     plt.ylabel("Relative intact intensity @ Pos")
     plt.xlabel("Half life @ Pos")
@@ -458,8 +484,35 @@ def site_spef(mid, show = False, debug = False):
 
     plot_title = "Site-Specific Deamidation"
     plt.title(plot_title)
+    #plt.tight_layout()
     save_plots("Site-Specific")
     if show: plt.show()
+
+
+def save_csv_results(data, method):
+    results_dir = "%s/Results" % data_folder
+    if not os.path.exists(results_dir):
+        os.makedirs(results_dir)
+    title = "%s_results.csv" % method
+    path = "%s/%s" % (results_dir, title)
+    with open(path, 'w') as csvfile:
+        writer = csv.writer(csvfile)
+        if method == "Site-Specific":
+            writer.writerow(["Half-time", "RelNonDeam", "Size", "Sample", "Protein"])
+        else:
+            writer.writerow(["Sample", "Protein", "NNonDeam", "QNonDeam"])
+        writer.writerows(data)
+    csvfile.close()
+    print "%s saved in %s" % (title, results_dir)
+
+
+def read_protein_list(protein_list_file):
+    """ Reads a list of relevant proteins in order to filter data later
+    """
+    f = open(protein_list_file, "r")
+    protein_list = f.read()
+    return protein_list
+
 
 data_folder = ""
 def main():
@@ -468,11 +521,15 @@ def main():
         data_folder = sys.argv[1]
     except IndexError as e:
         print "Specify path to data"
+    protein_list = []
+    if len(sys.argv) > 2:
+        protein_list_file = sys.argv[2]
+        protein_list = read_protein_list(protein_list_file)
 
-    total_data = mq(data_folder, filter_con = True)
+    total_data = mq(data_folder, protein_list, filter_con = False)
     mid_classic, mid_ss = get_mid(total_data)
-    bulk_deam(mid_classic, show = False, debug = False)
-    site_spef(mid_ss, show = False)
+    bulk_deam(mid_classic, show = False, to_print = True)
+    site_spef(mid_ss, show = False, to_print = True)
 
 
 main()
