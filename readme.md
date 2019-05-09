@@ -5,7 +5,7 @@ deamiDATE 1.0 is a site-specific deamidation tool for palaeproteomics.
 Given MaxQuant result output (in particular, the `evidence.txt` and `peptides.txt` files), it produces two graphs, one showing bulk deamidation, one showing site-specific deamidation.
 Deamidation is calculated per experiment, and per protein in experiment. If any filtering of experiments or proteins is required, it is recommended this is done before running deamiDATE.
 
-* Note: only tested on UNIX * 
+*Note: only tested on UNIX* 
 
 ## Use:
 
