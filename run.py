@@ -176,42 +176,38 @@ def get_mid(total_data):
                             mod_i, total_i = 0, 0
                             # Default half time
                             hf = -1
+
+                            total_i += intensity
+                            # If this position was modified, its mod label would be this
+                            q_mod = "%s-%i-de" % (aa, cur_pos)
+                            # If that label is in the mod list for this pos
+                            if q_mod in mods:
+                                # Increase mod intensity
+                                mod_i += intensity
+
                             if 0 < aa_i < len(seq)-1: # As long as the AA has two neighbours
                                 x = seq[aa_i+1] # Look right
                                 y = seq[aa_i-1] # Look left
                                 combo = "%s %s %s" % (y, aa, x) # SS label
-                                label = "%s %s" % (cur_pos, aa) # Classic label
 
                                 # Get half time from Pandas dataframe
                                 if (y in rob.index) and (x in rob.columns):
                                     hf = rob.ix[y, x]
-                                total_i += intensity
-                                # If this position was modified, its mod label would be this
-                                q_mod = "%s-%i-de" % (aa, cur_pos)
-                                # If that label is in the mod list for this pos
-                                if q_mod in mods:
-                                    # Increase mod intensity
-                                    mod_i += intensity
 
                                 # Add to SS MID
                                 if combo in mid_ss[sample][protein]:
                                     mid_ss[sample][protein][combo].append([mod_i, total_i])
                                 else: mid_ss[sample][protein][combo] = [hf, [mod_i, total_i]]
 
-                                # Add to classic MID
-                                if label in mid_classic[sample][protein]:
-                                    old_hf, [old_mod_i, old_total_i] = mid_classic[sample][protein][label]
-                                    # Double check we're not trying to update the half time
-                                    try:
-                                        assert old_hf == hf
-                                    except AssertionError:
-                                        print "Half times not equal"
-                                    mod_i += old_mod_i
-                                    total_i += old_total_i
-                                mid_classic[sample][protein][label] = [hf,[mod_i, total_i]]
+                            # Add to classic MID
+                            label = "%s %s" % (cur_pos, aa) # Classic label
+                            if label in mid_classic[sample][protein]:
+                                [old_mod_i, old_total_i] = mid_classic[sample][protein][label]
+                                mod_i += old_mod_i
+                                total_i += old_total_i
+                            mid_classic[sample][protein][label] = [mod_i, total_i]
                         # On to the next AA
                         cur_pos += 1
-
     return mid_classic, mid_ss
 
 
@@ -226,8 +222,7 @@ def calc_deam(mid):
             asn_m, asn_t, gln_m, gln_t = 0, 0, 0, 0
             rel_asn, rel_gln = -1, -1
             for label, val in mid[sample][protein].items():
-                hl = val[0]
-                mod, total = val[1]
+                mod, total = val
                 cur_pos, aa = label.split(" ")
                 if "N" == aa: # Asn
                     asn_m += mod
