@@ -211,12 +211,13 @@ def get_mid(total_data):
     return mid_classic, mid_ss
 
 
-def calc_deam(mid):
+def calc_deam(mid, to_print = True):
     """ Calculates bulk deamidation per sample, per protein
     Returns a list of [sample, protein, rel_asn, rel_gln]
     Where rel_asn and _gln are mod_intensity/total_intensity
     """
     relative = []
+    print_results = []
     for sample in mid:
         for protein in mid[sample]:
             asn_m, asn_t, gln_m, gln_t = 0, 0, 0, 0
@@ -224,6 +225,7 @@ def calc_deam(mid):
             for label, val in mid[sample][protein].items():
                 mod, total = val
                 cur_pos, aa = label.split(" ")
+                print_results.append([sample, protein, aa, 1-(mod/total)])
                 if "N" == aa: # Asn
                     asn_m += mod
                     asn_t += total
@@ -237,6 +239,7 @@ def calc_deam(mid):
                 rel_gln = 1 - (gln_m/gln_t)
             # Each sample relative amounts
             relative.append([sample, protein, rel_asn, rel_gln])
+    if to_print: save_fine_bulk(print_results)
     print "Bulk deamidation calculated"
     return relative
 
@@ -252,8 +255,25 @@ def bulk_deam(mid, show = False, to_print = True):
     fig, ax = plt.subplots()
 
     # Asn and Gln bars
-    asn_bars = ax.bar(index, relative[:,2], width, color='blue')
-    gln_bars = ax.bar(index + width, relative[:,3], width, color='red')
+    asn, gln, noasn, nogln = [], [], [], []
+    for r, i in zip(relative, index):
+        sample, protein, a, g = r
+        if a == "-1":
+            noasn.append([i, 1])
+        else: asn.append([i, a])
+        if g == "-1":
+            nogln.append([i+width, 1])
+        else: gln.append([i+width, g])
+
+    asn = np.array(asn, dtype = float)
+    gln = np.array(gln, dtype = float)
+    noasn = np.array(noasn, dtype = float)
+    nogln = np.array(nogln, dtype = float)
+
+    asn_bars = ax.bar(asn[:,0], asn[:,1], width, color='blue')
+    gln_bars = ax.bar(gln[:,0], gln[:,1], width, color='red')
+    noasn_bars = ax.bar(noasn[:,0], noasn[:,1], width, color='#70859B')
+    nogln_bars = ax.bar(nogln[:,0], nogln[:,1], width, color='#9B6C6B')
 
     # Make the bar names protein and sample
     if len(set(relative[:,0])) == 1: # Only one sample
@@ -267,7 +287,7 @@ def bulk_deam(mid, show = False, to_print = True):
     fig.autofmt_xdate()
 
     # Legend
-    ax.legend((asn_bars[0], gln_bars[0]), ('% Asn', '% Gln'), loc="lower right")
+    ax.legend((asn_bars[0], gln_bars[0], noasn_bars[0], nogln_bars[0]), ('% Asn', '% Gln', 'No Asn', 'No Gln'), loc="best")
 
     # Limits
     xmin, xmax, ymin, ymax = plt.axis()
@@ -341,6 +361,8 @@ def get_relative_size(ti, mid, sample, protein, single_sample):
 
 
 def site_spef(mid, show = False, to_print = True):
+    """ Plots site-specific deamidation plot
+    """
     # Initiate plotting
     fig = plt.figure()
     ax = plt.subplot(111)
@@ -448,7 +470,6 @@ def site_spef(mid, show = False, to_print = True):
         # We want intact intensity, not deamidated intensity
         rmi = 1 - float(rmi)
 
-
         plt.scatter(hf, rmi, color=col, marker=m, alpha=.8, s=size, label=l)
 
         if to_print:
@@ -484,7 +505,25 @@ def site_spef(mid, show = False, to_print = True):
     if show: plt.show()
 
 
+def save_fine_bulk(data):
+    """ Saves bulk deamidation data pre-averaging
+    """
+    results_dir = "%s/Results" % data_folder
+    if not os.path.exists(results_dir):
+        os.makedirs(results_dir)
+    title = "Bulk_fine_grain_results.csv"
+    path = "%s/%s" % (results_dir, title)
+    with open(path, 'w') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(["Sample", "Protein", "AA", "RelNonDeam"])
+        writer.writerows(data)
+    csvfile.close()
+    print "%s saved in %s" % (title, results_dir)
+
+
 def save_csv_results(data, method):
+    """Saves the results needed to recreate the plots
+    """
     results_dir = "%s/Results" % data_folder
     if not os.path.exists(results_dir):
         os.makedirs(results_dir)
