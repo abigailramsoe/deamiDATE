@@ -256,13 +256,16 @@ def bulk_deam(mid, show = False, to_print = True):
 
     # Asn and Gln bars
     asn, gln, noasn, nogln = [], [], [], []
+    show_nogln_bars, show_noasn_bars = False, False
     for r, i in zip(relative, index):
         sample, protein, a, g = r
         if a == "-1":
             noasn.append([i, 1])
+            noasn_bars = True
         else: asn.append([i, a])
         if g == "-1":
             nogln.append([i+width, 1])
+            nogln_bars = True
         else: gln.append([i+width, g])
 
     asn = np.array(asn, dtype = float)
@@ -272,8 +275,8 @@ def bulk_deam(mid, show = False, to_print = True):
 
     asn_bars = ax.bar(asn[:,0], asn[:,1], width, color='blue')
     gln_bars = ax.bar(gln[:,0], gln[:,1], width, color='red')
-    noasn_bars = ax.bar(noasn[:,0], noasn[:,1], width, color='#70859B')
-    nogln_bars = ax.bar(nogln[:,0], nogln[:,1], width, color='#9B6C6B')
+    if show_noasn_bars: noasn_bars = ax.bar(noasn[:,0], noasn[:,1], width, color='#70859B')
+    if show_nogln_bars: nogln_bars = ax.bar(nogln[:,0], nogln[:,1], width, color='#9B6C6B')
 
     # Make the bar names protein and sample
     if len(set(relative[:,0])) == 1: # Only one sample
@@ -287,7 +290,20 @@ def bulk_deam(mid, show = False, to_print = True):
     fig.autofmt_xdate()
 
     # Legend
-    ax.legend((asn_bars[0], gln_bars[0], noasn_bars[0], nogln_bars[0]), ('% Asn', '% Gln', 'No Asn', 'No Gln'), loc="best")
+    if show_nogln_bars and show_noasn_bars:
+        ax.legend((asn_bars[0], gln_bars[0], noasn_bars[0], nogln_bars[0]), ('% Asn', '% Gln', 'No Asn', 'No Gln'), loc="best")
+
+    if show_noasn_bars and not show_nogln_bars:
+        ax.legend((asn_bars[0], gln_bars[0], noasn_bars[0]), ('% Asn', '% Gln', 'No Asn'), loc="best")
+
+    if show_nogln_bars and not show_noasn_bars:
+        ax.legend((asn_bars[0], gln_bars[0], nogln_bars[0]), ('% Asn', '% Gln', 'No Gln'), loc="best")
+
+    if not show_nogln_bars and not show_noasn_bars:
+        ax.legend((asn_bars[0], gln_bars[0]), ('% Asn', '% Gln'), loc="best")
+
+
+
 
     # Limits
     xmin, xmax, ymin, ymax = plt.axis()
@@ -560,7 +576,7 @@ def main():
         protein_list_file = sys.argv[2]
         protein_list = read_protein_list(protein_list_file)
 
-    total_data = mq(data_folder, protein_list, filter_con = False)
+    total_data = mq(data_folder, protein_list, filter_con = True)
     mid_classic, mid_ss = get_mid(total_data)
     bulk_deam(mid_classic, show = False, to_print = True)
     site_spef(mid_ss, show = False, to_print = True)
