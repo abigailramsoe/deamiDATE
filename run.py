@@ -261,11 +261,11 @@ def bulk_deam(mid, show = False, to_print = True):
         sample, protein, a, g = r
         if a == "-1":
             noasn.append([i, 1])
-            noasn_bars = True
+            show_noasn_bars = True
         else: asn.append([i, a])
         if g == "-1":
             nogln.append([i+width, 1])
-            nogln_bars = True
+            show_nogln_bars = True
         else: gln.append([i+width, g])
 
     asn = np.array(asn, dtype = float)
