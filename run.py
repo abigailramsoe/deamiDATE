@@ -19,8 +19,8 @@ def mq(folder, protein_list, filter_con = True):
     print "Reading file from MQ"
 
     # Evidence and peptide folders
-    evi_file = folder + "/evidence.txt"
-    pep_file = folder +"/peptides.txt"
+    evi_file = os.path.join(folder, "evidence.txt")
+    pep_file = os.path.join(folder, "peptides.txt")
 
     # To store evidence and peptide data
     e_data = []
@@ -82,7 +82,7 @@ def mq(folder, protein_list, filter_con = True):
                 pre, post, start, end = p_data[ID]
                 if pre != "" and start != "":
                     mods_list = []
-                    possible_mods = ["de", "hy", "ox"] #TODO: Add more mods
+                    possible_mods = ["de"] #TODO: Add more mods
                     # If mods found, add to total_data in a readable format
                     for m in possible_mods:
                         if m in mods:
@@ -104,21 +104,6 @@ def mq(folder, protein_list, filter_con = True):
                         total_data[sample][protein].append(info)
     print "Data loaded"
     return total_data
-
-
-def peaks(folder):
-    #TODO
-    place = True
-
-
-def gpm(folder):
-    #TODO
-    place = True
-
-
-def mascot(mascot):
-    #TODO
-    place = True
 
 
 def get_robinson(aa):
@@ -301,9 +286,6 @@ def bulk_deam(mid, show = False, to_print = True):
 
     if not show_nogln_bars and not show_noasn_bars:
         ax.legend((asn_bars[0], gln_bars[0]), ('% Asn', '% Gln'), loc="best")
-
-
-
 
     # Limits
     xmin, xmax, ymin, ymax = plt.axis()
@@ -524,11 +506,11 @@ def site_spef(mid, show = False, to_print = True):
 def save_fine_bulk(data):
     """ Saves bulk deamidation data pre-averaging
     """
-    results_dir = "%s/Results" % data_folder
+    results_dir = os.path.join(data_folder, "Results")
     if not os.path.exists(results_dir):
         os.makedirs(results_dir)
     title = "Bulk_fine_grain_results.csv"
-    path = "%s/%s" % (results_dir, title)
+    path = os.path.join(results_dir, title)
     with open(path, 'w') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(["Sample", "Protein", "AA", "RelNonDeam"])
@@ -540,11 +522,11 @@ def save_fine_bulk(data):
 def save_csv_results(data, method):
     """Saves the results needed to recreate the plots
     """
-    results_dir = "%s/Results" % data_folder
+    results_dir = os.path.join(data_folder, "Results")
     if not os.path.exists(results_dir):
         os.makedirs(results_dir)
     title = "%s_results.csv" % method
-    path = "%s/%s" % (results_dir, title)
+    path = os.path.join(results_dir, title)
     with open(path, 'w') as csvfile:
         writer = csv.writer(csvfile)
         if method == "Site-Specific":
