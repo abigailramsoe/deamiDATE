@@ -15,7 +15,7 @@ Deamidation is calculated per experiment, and per protein in experiment. If any 
 1. Make `run.py` executable, e.g. `chmod +x run`
 2. Run program e.g. `./run.py` with the following args:
 	1. A directory containing at least `evidence.txt` and `peptides.txt`, e.g. `./run Test_Data`
-	2. [OPTIONAL] A text file containing a list (one per line) of relevant proteins to "filter in", e.g. `./run Test_Data Test_Data/protein_list.txt`
+	2. [OPTIONAL] A text file containing a list (one per line) of relevant proteins to "filter in", e.g. `./run Test_Data Test_Data/protein_list.txt`. Make sure you don't accidentally exclude all the proteins in the results. If you do this the program will crash with a mysterious warning that is not obvious.
 
 Results will appear in the directory in argument 1.
 
@@ -51,7 +51,13 @@ Print csv of results (default True)
 * Change lines 563 and 564 `to_print = False`
 
 Change colormap
-* In lines 384 - 390 change the colormap to another of your choice)
+* In lines 384 - 390 change the colormap to another of your choice
+
+Strange error appears:
+`File "./run.py", line 237, in bulk_deam
+	 index = np.arange(len(relative[:,0]))
+IndexError: too many indices for array`
+* Make sure your protein list does not exclude all proteins in the results
 
 ## Test Data
 
