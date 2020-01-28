@@ -50,8 +50,8 @@ Show plots when created (default False)
 Print csv of results (default True)
 * Change lines 563 and 564 `to_print = False`
 
-Problems with "colormap" not being found
-* In lines 384 - 390 change the colormap it is complaining about (e.g. `tab10`) to `jet` (or another of your choice)
+Change colormap
+* In lines 384 - 390 change the colormap to another of your choice)
 
 ## Test Data
 

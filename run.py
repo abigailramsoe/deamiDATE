@@ -383,7 +383,7 @@ def site_spef(mid, show = False, to_print = True):
     # Get colour map based on how many needed
     cmap_col = "nipy_spectral"
     if num_cols <= 10:
-        cmap_col = "tab10"
+        cmap_col = "jet"
     if 10 < num_cols <= 20:
         cmap_col = "tab20"
     cmap = plt.cm.get_cmap(cmap_col, num_cols)
@@ -546,6 +546,7 @@ def read_protein_list(protein_list_file):
     return protein_list
 
 
+
 data_folder = ""
 def main():
     global data_folder
@@ -557,7 +558,6 @@ def main():
     if len(sys.argv) > 2:
         protein_list_file = sys.argv[2]
         protein_list = read_protein_list(protein_list_file)
-
     total_data = mq(data_folder, protein_list, filter_con = True)
     mid_classic, mid_ss = get_mid(total_data)
     bulk_deam(mid_classic, show = False, to_print = True)
