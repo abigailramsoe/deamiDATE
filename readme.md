@@ -12,7 +12,7 @@ Deamidation is calculated per experiment, and per protein in experiment. If any 
 * You will need Python 2.7
 * You will need to install at least `numpy` and `pandas` (normally done with e.g. `pip install numpy`)
 
-1. Make `run.py` executable, e.g. `chmod +x run`
+1. Make `run.py` executable, e.g. `chmod +x run.pu`
 2. Run program e.g. `./run.py` with the following args:
 	1. A directory containing at least `evidence.txt` and `peptides.txt`, e.g. `./run Test_Data`
 	2. [OPTIONAL] A text file containing a list (one per line) of relevant proteins to "filter in", e.g. `./run Test_Data Test_Data/protein_list.txt`. Make sure you don't accidentally exclude all the proteins in the results. If you do this the program will crash with a mysterious warning that is not obvious.
