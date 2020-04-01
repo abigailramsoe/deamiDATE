@@ -1,8 +1,5 @@
 #!/usr/bin/python
 from __future__ import division
-from matplotlib import markers
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 import numpy as np
 import pandas as pd
 import random
@@ -225,6 +222,7 @@ def calc_deam(mid, to_print = True):
             # Each sample relative amounts
             relative.append([sample, protein, rel_asn, rel_gln])
     if to_print: save_fine_bulk(print_results)
+    if to_print: save_csv_results(relative, "Bulk")
     print "Bulk deamidation calculated"
     return relative
 
@@ -236,81 +234,7 @@ def bulk_deam(mid, show = False, to_print = True):
     index = np.arange(len(relative[:,0]))
     relative = np.array(sorted(relative, key=lambda row:row[0])) # Sort by sample
 
-    width = .35
-    fig, ax = plt.subplots()
-
-    # Asn and Gln bars
-    asn, gln, noasn, nogln = [], [], [], []
-    show_nogln_bars, show_noasn_bars = False, False
-    for r, i in zip(relative, index):
-        sample, protein, a, g = r
-        if a == "-1":
-            noasn.append([i, 1])
-            show_noasn_bars = True
-        else: asn.append([i, a])
-        if g == "-1":
-            nogln.append([i+width, 1])
-            show_nogln_bars = True
-        else: gln.append([i+width, g])
-
-    asn = np.array(asn, dtype = float)
-    gln = np.array(gln, dtype = float)
-    noasn = np.array(noasn, dtype = float)
-    nogln = np.array(nogln, dtype = float)
-
-    asn_bars = ax.bar(asn[:,0], asn[:,1], width, color='blue')
-    gln_bars = ax.bar(gln[:,0], gln[:,1], width, color='red')
-    if show_noasn_bars: noasn_bars = ax.bar(noasn[:,0], noasn[:,1], width, color='#70859B')
-    if show_nogln_bars: nogln_bars = ax.bar(nogln[:,0], nogln[:,1], width, color='#9B6C6B')
-
-    # Make the bar names protein and sample
-    if len(set(relative[:,0])) == 1: # Only one sample
-        names = relative[:,1] # Protein is names
-    else:
-        names = ["%s %s" % (x, y) for x, y in zip(relative[:,0], relative[:,1])]
-    # Lables
-    ax.set_ylabel('% (Asn, Gln)')
-    ax.set_xticks(index + width / 2)
-    ax.set_xticklabels(names)
-    fig.autofmt_xdate()
-
-    # Legend
-    if show_nogln_bars and show_noasn_bars:
-        ax.legend((asn_bars[0], gln_bars[0], noasn_bars[0], nogln_bars[0]), ('% Asn', '% Gln', 'No Asn', 'No Gln'), loc="best")
-
-    if show_noasn_bars and not show_nogln_bars:
-        ax.legend((asn_bars[0], gln_bars[0], noasn_bars[0]), ('% Asn', '% Gln', 'No Asn'), loc="best")
-
-    if show_nogln_bars and not show_noasn_bars:
-        ax.legend((asn_bars[0], gln_bars[0], nogln_bars[0]), ('% Asn', '% Gln', 'No Gln'), loc="best")
-
-    if not show_nogln_bars and not show_noasn_bars:
-        ax.legend((asn_bars[0], gln_bars[0]), ('% Asn', '% Gln'), loc="best")
-
-    # Limits
-    xmin, xmax, ymin, ymax = plt.axis()
-    plt.axis((xmin, xmax, ymin, 1.0))
-
-    # Title
-    plot_title = "Bulk Deamidation"
-    plt.title(plot_title)
-    plt.tight_layout()
-    save_plots("Bulk")
     if to_print: save_csv_results(relative, "Bulk")
-    if show: plt.show()
-
-
-def save_plots(method):
-    """ Save plots to a Results dir, which is created or located inside the
-    data directory given as args
-    """
-    results_dir = "%s/Results" % data_folder
-    if not os.path.exists(results_dir):
-		os.makedirs(results_dir)
-    title = "%s_plot.png" % method
-    path = "%s/%s" % (results_dir, title)
-    plt.savefig(path)
-    print "%s saved in %s" % (title, results_dir)
 
 
 def ss_wrangle(mid):
@@ -355,120 +279,35 @@ def get_relative_size(ti, mid, sample, protein, single_sample):
     o_range = (o_max - o_min)
     n_range = (n_max - n_min)
     new_size = (((ti - o_min)*n_range)/o_range)+n_min
+    if np.isnan(new_size): new_size = n_min
     return new_size
 
 
 def site_spef(mid, show = False, to_print = True):
     """ Plots site-specific deamidation plot
     """
-    # Initiate plotting
-    fig = plt.figure()
-    ax = plt.subplot(111)
-
     # Get data and sort by sample
     data = np.array(sorted(ss_wrangle(mid), key=lambda row:row[0]))
 
-    # Check if there's oly one sample
-    # If so we want to colour stuff by protein instead
-    single_sample = False
-    col_index = 0
-    if len(mid.keys()) == 1:
-        single_sample = True
-        col_index = 1
-
-
-    # How many different samples/proteins
-    num_cols = len(set(data[:,col_index])) + 1
-
-    # Get colour map based on how many needed
-    cmap_col = "nipy_spectral"
-    if num_cols <= 10:
-        cmap_col = "jet"
-    if 10 < num_cols <= 20:
-        cmap_col = "jet"
-    cmap = plt.cm.get_cmap(cmap_col, num_cols)
-    c = 0
-
-    # If there have to be more than 10 colours, it will get confusing
-    # If this is the case we just want to show samples in the legend
-    simplify = False
-    if num_cols >= 10 and not single_sample:
-        simplify = True
-
-    # !!! MANUALLY SET "SIMPLIFY" TO TRUE/FALSE HERE IF NEEDED
-
-    # Labels and markers
-    used_labels = []
-    used_markers = []
-    marker_dict = {}
-    valid_markers = ([item[0] for item in markers.MarkerStyle.markers.items() if
-    item[1] is not 'nothing' and not item[1].startswith('tick')
-    and not item[1].startswith('caret')])
-    # Hack to take out stupid markers
-    del valid_markers[3]
-    del valid_markers[6]
-    del valid_markers[2]
-    random.shuffle(valid_markers)
-    patches = []
     # None for now
     prev_sample, prev_protein = data[0][0:2]
 
     # Data to print later
     data_to_print = []
 
+    single_sample = False
+    if len(mid.keys()) == 1:
+        single_sample = True
+
     for line in data:
 
         sample, protein, label, hf, rmi, ti = line
 
-        # Colour depending on sample or protein
-        color_attribute = sample
-        prev_color_attribute = prev_sample
-        if single_sample:
-            color_attribute = protein
-            prev_color_attribute = prev_protein
-
-        # Get new colour
-        if prev_color_attribute != color_attribute:
-            c += 1
-        col = cmap(c)
-
-        # Legend hack
-        # This is needed so as not to duplicate label every point
-        if not simplify:
-            l = "%s %s" % (sample, protein)
-        if simplify:
-            l = sample # Keep it simple if many samples
-        if single_sample:
-            l = protein # Only need protein if only one sample
-        if l in used_labels:
-            l = None
-        else:
-            used_labels.append(l)
-            if simplify:
-                # Use patches on legend if there's lots of samples/proteins
-                patches.append(mpatches.Patch(color=col, label=l))
-
         # Get a relative size for the points
         size = get_relative_size(ti, mid, sample, protein, single_sample)
 
-        # Get a marker based on protein from all valid markers
-        if protein in marker_dict:
-            m = marker_dict[protein]
-        else:
-            m = valid_markers[0]
-            marker_dict[protein] = m
-            # Used this one, so pop from list
-            used_markers.append(valid_markers.pop(0))
-            # If there's none left, refresh list
-            if len(valid_markers) == 0:
-                valid_markers = list(set(used_markers))
-                used_markers = []
-
-
         # We want intact intensity, not deamidated intensity
         rmi = 1 - float(rmi)
-
-        plt.scatter(hf, rmi, color=col, marker=m, alpha=.8, s=size, label=l)
 
         if to_print:
             data_to_print.append([hf, rmi, size, sample, protein])
@@ -476,31 +315,9 @@ def site_spef(mid, show = False, to_print = True):
         prev_sample = sample
         prev_protein = protein
 
-
     # Send to printing?
     if to_print:
         save_csv_results(data_to_print, "Site-Specific")
-    # Labels
-    plt.ylabel("Relative intact intensity @ Pos")
-    plt.xlabel("Half life @ Pos")
-
-    # Used to put legend outside the box
-    box = ax.get_position()
-    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
-
-    if simplify: # Use patches if too much data
-        lgd = plt.legend(handles=patches, prop={'size':7},loc='center left', bbox_to_anchor=(1, 0.5))
-    else:
-        lgd = plt.legend(prop={'size':7},loc='center left', bbox_to_anchor=(1, 0.5))
-    # Make small and neat
-    for i in xrange(0, len(lgd.legendHandles)):
-        lgd.legendHandles[i]._sizes = [30]
-
-    plot_title = "Site-Specific Deamidation"
-    plt.title(plot_title)
-    #plt.tight_layout()
-    save_plots("Site-Specific")
-    if show: plt.show()
 
 
 def save_fine_bulk(data):
@@ -544,7 +361,6 @@ def read_protein_list(protein_list_file):
     f = open(protein_list_file, "r")
     protein_list = f.read()
     return protein_list
-
 
 
 data_folder = ""
