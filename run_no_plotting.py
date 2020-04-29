@@ -81,6 +81,8 @@ def mq(folder, protein_list, filter_con = True):
                     mods_list = []
                     possible_mods = ["de"] #TODO: Add more mods
                     # If mods found, add to total_data in a readable format
+                    if "Deamidation (NQ)" in mods:
+                        mods = mods.replace("Deamidation (NQ)", "de")
                     for m in possible_mods:
                         if m in mods:
                             actual_pos = 1 # For counting position in sequence
